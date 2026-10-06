@@ -1,0 +1,183 @@
+{
+    "best_model_name": "Logistic Regression",
+    "model_comparison": {
+        "Random Forest": {
+            "accuracy": 0.9483,
+            "precision_macro": 0.9598,
+            "recall_macro": 0.935,
+            "f1_macro": 0.9463,
+            "f1_weighted": 0.9482,
+            "roc_auc_ovr": 0.9941,
+            "confusion_matrix": [
+                [
+                    182,
+                    0,
+                    11
+                ],
+                [
+                    0,
+                    96,
+                    12
+                ],
+                [
+                    7,
+                    1,
+                    291
+                ]
+            ]
+        },
+        "Gradient Boosting": {
+            "accuracy": 0.9633,
+            "precision_macro": 0.9739,
+            "recall_macro": 0.9468,
+            "f1_macro": 0.9589,
+            "f1_weighted": 0.963,
+            "roc_auc_ovr": 0.9976,
+            "confusion_matrix": [
+                [
+                    188,
+                    0,
+                    5
+                ],
+                [
+                    0,
+                    95,
+                    13
+                ],
+                [
+                    4,
+                    0,
+                    295
+                ]
+            ]
+        },
+        "Logistic Regression": {
+            "accuracy": 0.9817,
+            "precision_macro": 0.9846,
+            "recall_macro": 0.9774,
+            "f1_macro": 0.9809,
+            "f1_weighted": 0.9817,
+            "roc_auc_ovr": 0.9988,
+            "confusion_matrix": [
+                [
+                    189,
+                    0,
+                    4
+                ],
+                [
+                    0,
+                    104,
+                    4
+                ],
+                [
+                    2,
+                    1,
+                    296
+                ]
+            ]
+        },
+        "Support Vector Machine": {
+            "accuracy": 0.975,
+            "precision_macro": 0.9783,
+            "recall_macro": 0.971,
+            "f1_macro": 0.9745,
+            "f1_weighted": 0.975,
+            "roc_auc_ovr": 0.998,
+            "confusion_matrix": [
+                [
+                    189,
+                    0,
+                    4
+                ],
+                [
+                    0,
+                    103,
+                    5
+                ],
+                [
+                    5,
+                    1,
+                    293
+                ]
+            ]
+        },
+        "K-Nearest Neighbors": {
+            "accuracy": 0.905,
+            "precision_macro": 0.9187,
+            "recall_macro": 0.8793,
+            "f1_macro": 0.8959,
+            "f1_weighted": 0.9042,
+            "roc_auc_ovr": 0.9817,
+            "confusion_matrix": [
+                [
+                    177,
+                    0,
+                    16
+                ],
+                [
+                    0,
+                    84,
+                    24
+                ],
+                [
+                    12,
+                    5,
+                    282
+                ]
+            ]
+        }
+    },
+    "feature_importance": {
+        "video_completion_rate": 2.7325,
+        "login_frequency_per_week": 2.5674,
+        "assignment_submission_rate": 2.311,
+        "discussion_forum_posts": 2.148,
+        "quiz_avg_score": 1.6018,
+        "study_intensity_score": 1.0258,
+        "days_inactive_last_30_days": 0.903,
+        "active_days_ratio": 0.903,
+        "time_spent_per_session_mins": 0.4225,
+        "video_watch_time_hours": 0.2261,
+        "course_category_Business & Management": 0.206,
+        "forum_participation_rate": 0.1979,
+        "quiz_attempts": 0.1858,
+        "course_category_Data Science": 0.1694,
+        "device_type_Desktop": 0.15,
+        "device_type_Tablet": 0.1369,
+        "device_type_Laptop": 0.1284,
+        "device_type_Mobile": 0.111,
+        "course_category_Computer Science": 0.0913,
+        "course_category_Humanities & Social Sciences": 0.0734,
+        "previous_course_gpa": 0.063,
+        "course_category_Engineering": 0.0275
+    },
+    "target_classes": [
+        "Low",
+        "Medium",
+        "High"
+    ],
+    "feature_names": [
+        "login_frequency_per_week",
+        "video_watch_time_hours",
+        "video_completion_rate",
+        "quiz_attempts",
+        "quiz_avg_score",
+        "assignment_submission_rate",
+        "discussion_forum_posts",
+        "days_inactive_last_30_days",
+        "time_spent_per_session_mins",
+        "previous_course_gpa",
+        "active_days_ratio",
+        "study_intensity_score",
+        "forum_participation_rate",
+        "course_category_Business & Management",
+        "course_category_Computer Science",
+        "course_category_Data Science",
+        "course_category_Engineering",
+        "course_category_Humanities & Social Sciences",
+        "device_type_Desktop",
+        "device_type_Laptop",
+        "device_type_Mobile",
+        "device_type_Tablet"
+    ]
+}

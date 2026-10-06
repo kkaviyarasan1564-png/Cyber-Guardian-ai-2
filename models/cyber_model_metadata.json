@@ -1,0 +1,419 @@
+{
+    "best_model": "Random Forest",
+    "classes": [
+        "Benign",
+        "DDoS",
+        "Malware",
+        "Phishing",
+        "Ransomware"
+    ],
+    "metrics_summary": {
+        "Random Forest": {
+            "cv_f1_mean": 1.0,
+            "cv_f1_std": 0.0,
+            "test_accuracy": 1.0,
+            "test_precision": 1.0,
+            "test_recall": 1.0,
+            "test_f1_weighted": 1.0,
+            "test_f1_macro": 1.0,
+            "test_roc_auc": 1.0,
+            "confusion_matrix": [
+                [
+                    407,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    96,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    193,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    153,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    151
+                ]
+            ],
+            "classification_report": {
+                "Benign": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 407.0
+                },
+                "DDoS": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 96.0
+                },
+                "Malware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 193.0
+                },
+                "Phishing": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 153.0
+                },
+                "Ransomware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 151.0
+                },
+                "accuracy": 1.0,
+                "macro avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                }
+            }
+        },
+        "Gradient Boosting": {
+            "cv_f1_mean": 1.0,
+            "cv_f1_std": 0.0,
+            "test_accuracy": 1.0,
+            "test_precision": 1.0,
+            "test_recall": 1.0,
+            "test_f1_weighted": 1.0,
+            "test_f1_macro": 1.0,
+            "test_roc_auc": 1.0,
+            "confusion_matrix": [
+                [
+                    407,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    96,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    193,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    153,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    151
+                ]
+            ],
+            "classification_report": {
+                "Benign": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 407.0
+                },
+                "DDoS": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 96.0
+                },
+                "Malware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 193.0
+                },
+                "Phishing": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 153.0
+                },
+                "Ransomware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 151.0
+                },
+                "accuracy": 1.0,
+                "macro avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                }
+            }
+        },
+        "Support Vector Classifier (SVM)": {
+            "cv_f1_mean": 1.0,
+            "cv_f1_std": 0.0,
+            "test_accuracy": 1.0,
+            "test_precision": 1.0,
+            "test_recall": 1.0,
+            "test_f1_weighted": 1.0,
+            "test_f1_macro": 1.0,
+            "test_roc_auc": 1.0,
+            "confusion_matrix": [
+                [
+                    407,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    96,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    193,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    153,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    151
+                ]
+            ],
+            "classification_report": {
+                "Benign": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 407.0
+                },
+                "DDoS": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 96.0
+                },
+                "Malware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 193.0
+                },
+                "Phishing": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 153.0
+                },
+                "Ransomware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 151.0
+                },
+                "accuracy": 1.0,
+                "macro avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                }
+            }
+        },
+        "Logistic Regression": {
+            "cv_f1_mean": 1.0,
+            "cv_f1_std": 0.0,
+            "test_accuracy": 1.0,
+            "test_precision": 1.0,
+            "test_recall": 1.0,
+            "test_f1_weighted": 1.0,
+            "test_f1_macro": 1.0,
+            "test_roc_auc": 1.0,
+            "confusion_matrix": [
+                [
+                    407,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    96,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    193,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    153,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    151
+                ]
+            ],
+            "classification_report": {
+                "Benign": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 407.0
+                },
+                "DDoS": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 96.0
+                },
+                "Malware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 193.0
+                },
+                "Phishing": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 153.0
+                },
+                "Ransomware": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 151.0
+                },
+                "accuracy": 1.0,
+                "macro avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                },
+                "weighted avg": {
+                    "precision": 1.0,
+                    "recall": 1.0,
+                    "f1-score": 1.0,
+                    "support": 1000.0
+                }
+            }
+        }
+    },
+    "feature_importances": {
+        "ip_reputation_score": 0.10666,
+        "recon_threat_factor": 0.08663,
+        "suspicious_keywords_count": 0.07527,
+        "cpu_usage_pct": 0.07475,
+        "crypto_api_calls": 0.07286,
+        "endpoint_stress_index": 0.07235,
+        "byte_count": 0.07078,
+        "file_io_rate_mb": 0.05505,
+        "dns_query_rate": 0.05083,
+        "avg_bytes_per_packet": 0.04782,
+        "crypto_entropy_burst": 0.047,
+        "file_entropy_score": 0.04259,
+        "ram_usage_pct": 0.0321,
+        "phishing_payload_risk": 0.03192,
+        "url_length": 0.02471,
+        "connection_count_10m": 0.01989,
+        "bytes_per_second": 0.01577,
+        "packet_count": 0.01517,
+        "src_bytes_ratio": 0.01508,
+        "syn_ack_ratio": 0.013,
+        "packets_per_second": 0.00833,
+        "failed_logins": 0.00679,
+        "duration_sec": 0.0042,
+        "privilege_escalation_flag": 0.00379,
+        "protocol_SMB": 0.00278,
+        "dest_port": 0.00155,
+        "protocol_TCP": 0.00119,
+        "protocol_UDP": 0.00054,
+        "protocol_HTTP": 0.00034,
+        "protocol_HTTPS": 0.00018,
+        "protocol_SSH": 8e-05,
+        "protocol_FTP": 0.0,
+        "protocol_DNS": 0.0
+    },
+    "total_samples": 5000,
+    "train_samples": 4000,
+    "test_samples": 1000,
+    "feature_count": 33
+}
