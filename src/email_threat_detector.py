@@ -1,10 +1,14 @@
 """
 AI-Powered Cyber Defense System - Email Authenticity & Fake/Phishing Mail Detector
 Uses Natural Language Processing (NLP), Lexical Heuristics, and Machine Learning
-to classify emails as Real (Legitimate) vs Fake / Phishing / Scam in real-time.
+to classify emails as Real (Legitimate) vs Fake / Phishing / Spam in real-time.
+Supports raw email text, .eml (RFC 822), .txt, .csv, and .json email file uploads.
 """
 
 import re
+import email
+from email import policy
+from email.parser import BytesParser, Parser
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -12,10 +16,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 import joblib
 import os
+import io
 
 # Corpus of representative real and fake/phishing emails for training NLP baseline
 TRAINING_EMAILS = [
-    # FAKE / PHISHING / SCAM EMAILS (Label 1: Fake / Malicious)
+    # FAKE / PHISHING / SCAM / SPAM EMAILS (Label 1: Spam / Phishing / Fake)
     ("Urgent: Your PayPal account has been suspended! Verify your identity immediately by clicking here: http://paypa1-security-update.com/login", 1),
     ("Action Required: Unusual login detected from Russia. Reset your Microsoft password now: http://login-microsoft-secure-verify.net", 1),
     ("Congratulations! You won $1,000,000 in the Google International Lottery. Send your bank details to claim prize.", 1),
@@ -31,8 +36,13 @@ TRAINING_EMAILS = [
     ("Verify your Coinbase wallet seed phrase to avoid losing your cryptocurrency funds after the upcoming hard fork.", 1),
     ("IRS Tax Refund Notification: You are eligible for a $1,420 tax refund. Submit your Social Security Number to receive funds.", 1),
     ("Document Shared: 'Confidential Salary Q3 Review'. Click to authenticate with your company email credentials.", 1),
+    ("Exclusive Offer: Lose 20 pounds in 7 days with this secret pill. Click here now for special discount voucher!", 1),
+    ("Hot Singles in your area want to meet you! Click to view confidential profiles now.", 1),
+    ("Earn $5,000 per week working 2 hours from home. Guaranteed investment return. Wire signup deposit to start.", 1),
+    ("Your Norton Antivirus subscription renewed automatically for $499. If you did not authorize this, call support immediately.", 1),
+    ("Dear customer, your Chase bank online access is disabled. Click here to confirm your social security number and debit card details.", 1),
     
-    # REAL / LEGITIMATE EMAILS (Label 0: Real / Legitimate)
+    # REAL / LEGITIMATE / NOT SPAM EMAILS (Label 0: Real / Legitimate / Not Spam)
     ("Team meeting scheduled for tomorrow at 10:00 AM in Conference Room B. Please review the attached project slide deck.", 0),
     ("Your Amazon order #112-9847291 has shipped and will arrive on Thursday. Track package in your official Amazon mobile app.", 0),
     ("Hi David, thanks for sending over the quarterly budget report. I will review and get back to you with notes by Friday.", 0),
@@ -47,12 +57,17 @@ TRAINING_EMAILS = [
     ("Thanks for contacting customer support. Your ticket #45892 has been resolved. Please rate your experience.", 0),
     ("LinkedIn: John Doe endorsed you for Machine Learning and Python. Congratulate your connection.", 0),
     ("Attached are the lecture notes and assignment guidelines for Data Science Week 4. Due next Tuesday at midnight.", 0),
-    ("Hi Alex, here is the updated contract for the client consultation. Let me know if you would like any changes made.", 0)
+    ("Hi Alex, here is the updated contract for the client consultation. Let me know if you would like any changes made.", 0),
+    ("Your weekly Jira project sprint summary is ready. 14 issues closed, 3 pending review.", 0),
+    ("Slack Notification: You were mentioned by @alex in #machine-learning channel.", 0),
+    ("Uber Receipt: Thanks for riding with us. Your fare of $18.50 was charged to your credit card.", 0),
+    ("Here is the meeting agenda for the data science curriculum review meeting on Friday.", 0),
+    ("Apple Receipt: Your iCloud+ 50 GB monthly storage plan has renewed for $0.99.", 0)
 ]
 
 class EmailThreatDetector:
     """
-    NLP and Heuristic-Driven Email Fake/Real & Phishing Threat Detector.
+    NLP and Heuristic-Driven Email Fake/Real & Spam/Phishing Threat Detector.
     """
     def __init__(self, model_path: str = "models/email_threat_detector.joblib"):
         self.model_path = model_path
@@ -68,13 +83,12 @@ class EmailThreatDetector:
             except Exception:
                 pass
                 
-        # Train NLP Pipeline
         texts = [item[0] for item in TRAINING_EMAILS]
         labels = [item[1] for item in TRAINING_EMAILS]
         
         self.pipeline = Pipeline([
-            ('tfidf', TfidfVectorizer(ngram_range=(1, 2), stop_words='english', max_features=1000)),
-            ('rf', RandomForestClassifier(n_estimators=100, random_state=42))
+            ('tfidf', TfidfVectorizer(ngram_range=(1, 2), stop_words='english', max_features=1500)),
+            ('rf', RandomForestClassifier(n_estimators=120, random_state=42))
         ])
         
         self.pipeline.fit(texts, labels)
@@ -82,102 +96,149 @@ class EmailThreatDetector:
         joblib.dump(self.pipeline, self.model_path)
         print(f"[+] Successfully trained and saved Email Threat Detector to '{self.model_path}'")
 
+    def parse_eml_bytes(self, file_bytes: bytes) -> dict:
+        """Parses a standard .eml (RFC 822) or .txt email file."""
+        try:
+            msg = BytesParser(policy=policy.default).parsebytes(file_bytes)
+            subject = msg.get('Subject', '') or ''
+            sender = msg.get('From', '') or ''
+            date = msg.get('Date', '') or ''
+            to = msg.get('To', '') or ''
+            
+            # Extract plain text body
+            body = ""
+            if msg.is_multipart():
+                for part in msg.walk():
+                    content_type = part.get_content_type()
+                    if content_type == 'text/plain':
+                        body += part.get_payload(decode=True).decode('utf-8', errors='ignore') + "\n"
+                    elif content_type == 'text/html' and not body:
+                        html_text = part.get_payload(decode=True).decode('utf-8', errors='ignore')
+                        # Simple tag strip
+                        body += re.sub(r'<[^>]+>', ' ', html_text) + "\n"
+            else:
+                body = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
+                
+            return {
+                "subject": subject,
+                "sender": sender,
+                "date": date,
+                "to": to,
+                "body": body.strip()
+            }
+        except Exception:
+            # Fallback to plain text decode
+            text = file_bytes.decode('utf-8', errors='ignore')
+            return {
+                "subject": "Uploaded Plain Text Email",
+                "sender": "Unknown Sender",
+                "date": "N/A",
+                "to": "N/A",
+                "body": text.strip()
+            }
+
     def analyze_email(self, subject: str, sender: str, body: str) -> dict:
         """
-        Deep multi-factor analysis of email authenticity (Fake vs Real).
+        Deep multi-factor analysis of email authenticity (Spam / Fake vs Real / Not Spam).
         """
-        full_text = f"{subject} {body}"
-        
+        full_text = f"{subject} {body}".strip()
+        if not full_text:
+            full_text = "Empty Message"
+            
         # 1. NLP Model Probability
-        ml_prob_fake = float(self.pipeline.predict_proba([full_text])[0][1]) * 100.0
+        ml_prob_spam = float(self.pipeline.predict_proba([full_text])[0][1]) * 100.0
         
         # 2. Heuristic & Security Risk Factor Scoring
         risk_score = 0.0
         red_flags = []
         green_flags = []
         
-        # Check Urgency / Coercion keywords
+        # Urgency & Coercion triggers
         urgency_patterns = [
             r'\burgent\b', r'\bimmediate(ly)?\b', r'\baction required\b', r'\bsuspended\b',
             r'\brestricted\b', r'\breset your password\b', r'\bverify\b', r'\bwire transfer\b',
-            r'\b24 hours\b', r'\baccount locked\b', r'\bfailure\b', r'\bpenalty\b', r'\bquota full\b'
+            r'\b24 hours\b', r'\baccount locked\b', r'\bfailure\b', r'\bpenalty\b', r'\bquota full\b',
+            r'\blottery\b', r'\bwon \$\b', r'\bguaranteed return\b', r'\bseed phrase\b'
         ]
         found_urgency = []
         for pattern in urgency_patterns:
             if re.search(pattern, full_text, re.IGNORECASE):
-                found_urgency.append(pattern.replace(r'\b', '').replace('?', ''))
+                found_urgency.append(pattern.replace(r'\b', '').replace('?', '').replace('\\', ''))
                 
         if found_urgency:
             risk_score += min(35.0, len(found_urgency) * 12.0)
-            red_flags.append(f"High-Urgency / Coercive Psychological Triggers detected: ({', '.join(found_urgency[:4])})")
+            red_flags.append(f"High-Urgency & Psychological Coercion Triggers: ({', '.join(found_urgency[:4])})")
         else:
-            green_flags.append("No psychological urgency or coercion tactics detected.")
+            green_flags.append("No psychological urgency or coercion triggers detected.")
 
-        # Check Suspicious Domains / Free Webmail Spoofing
+        # Suspicious Sender Domain Check
         sender_lower = sender.lower().strip()
-        suspicious_tlds = ['.cc', '.top', '.tk', '.xyz', '.cf', '.work', '.click', '.buzz', '.net']
+        suspicious_tlds = ['.cc', '.top', '.tk', '.xyz', '.cf', '.work', '.click', '.buzz', '.net', '.onion']
         is_spoofed_sender = False
         
         if any(tld in sender_lower for tld in suspicious_tlds):
             risk_score += 25.0
             is_spoofed_sender = True
-            red_flags.append(f"Sender address utilizes high-risk suspicious domain TLD: '{sender}'")
+            red_flags.append(f"Sender address uses a suspicious domain TLD: '{sender}'")
             
-        if any(brand in full_text.lower() for brand in ['paypal', 'microsoft', 'google', 'netflix', 'apple', 'amazon', 'bank']):
-            # Brand mentioned, check if sender matches official domain
-            if not any(off in sender_lower for off in ['paypal.com', 'microsoft.com', 'google.com', 'netflix.com', 'apple.com', 'amazon.com']):
+        if any(brand in full_text.lower() for brand in ['paypal', 'microsoft', 'google', 'netflix', 'apple', 'amazon', 'chase', 'bank', 'irs', 'coinbase']):
+            if sender_lower and not any(off in sender_lower for off in ['paypal.com', 'microsoft.com', 'google.com', 'netflix.com', 'apple.com', 'amazon.com', 'chase.com', 'irs.gov', 'coinbase.com']):
                 risk_score += 35.0
                 is_spoofed_sender = True
-                red_flags.append(f"Brand Impersonation Detected: Content mentions major service, but sender ('{sender}') does not match official domain.")
-                
-        # Check URLs in body
+                red_flags.append(f"Brand Impersonation: Content references major service, but sender domain ('{sender}') does not match official domain.")
+
+        # Extract Hyperlinks
         urls = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', body)
         suspicious_links = []
         for url in urls:
-            if any(term in url.lower() for term in ['login', 'verify', 'update', 'secure', 'account', 'banking', 'billing', 'wallet']):
+            if any(term in url.lower() for term in ['login', 'verify', 'update', 'secure', 'account', 'banking', 'billing', 'wallet', 'token', 'auth']):
                 suspicious_links.append(url)
                 
         if suspicious_links:
             risk_score += min(30.0, len(suspicious_links) * 15.0)
-            red_flags.append(f"Credential Harvesting Links flagged in email body ({len(suspicious_links)} link(s)).")
+            red_flags.append(f"Credential Harvesting Link(s) detected ({len(suspicious_links)} link(s)).")
         elif urls:
             risk_score += 10.0
-            red_flags.append(f"External links present in message body ({len(urls)} link(s)).")
+            red_flags.append(f"External hyperlinks present ({len(urls)} link(s)).")
         else:
-            green_flags.append("No suspicious external hyperlinks detected.")
+            green_flags.append("No external hyperlinks detected in email body.")
 
-        # Combined Final Authenticity Score
-        final_fake_prob = (ml_prob_fake * 0.45) + (risk_score * 0.55)
-        final_fake_prob = max(1.0, min(99.5, final_fake_prob))
-        final_real_prob = 100.0 - final_fake_prob
+        # Final Spam/Fake vs Not Spam/Real Probability Fusion
+        final_spam_prob = (ml_prob_spam * 0.45) + (risk_score * 0.55)
+        final_spam_prob = max(1.0, min(99.5, final_spam_prob))
+        final_not_spam_prob = 100.0 - final_spam_prob
         
-        is_fake = final_fake_prob >= 50.0
+        is_spam = final_spam_prob >= 50.0
         
-        if final_fake_prob >= 75.0:
-            verdict = "🚨 FAKE / DANGEROUS PHISHING EMAIL"
+        if final_spam_prob >= 75.0:
+            classification = "SPAM / FAKE / PHISHING"
+            badge = "🚨 SPAM / PHISHING DETECTED"
             severity = "CRITICAL"
             color = "#ef4444"
-        elif final_fake_prob >= 50.0:
-            verdict = "⚠️ SUSPICIOUS / POTENTIAL SPAM SCAM"
+        elif final_spam_prob >= 50.0:
+            classification = "SPAM / SUSPICIOUS"
+            badge = "⚠️ SUSPICIOUS SPAM"
             severity = "HIGH"
             color = "#f59e0b"
-        elif final_fake_prob >= 25.0:
-            verdict = "⚡ LOW-RISK (Verify Sender)"
+        elif final_spam_prob >= 25.0:
+            classification = "NOT SPAM (Low Risk)"
+            badge = "⚡ NOT SPAM (Verify Sender)"
             severity = "MEDIUM"
             color = "#ffd600"
         else:
-            verdict = "✅ REAL & AUTHENTIC EMAIL"
+            classification = "NOT SPAM / REAL"
+            badge = "✅ NOT SPAM / LEGITIMATE"
             severity = "LEGITIMATE"
             color = "#10b981"
             
-        # SOAR Email Playbook
-        soar_actions = self._generate_email_soar_actions(is_fake, sender, suspicious_links)
+        soar_actions = self._generate_email_soar_actions(is_spam, sender, suspicious_links)
         
         return {
-            "verdict": verdict,
-            "is_fake": is_fake,
-            "fake_probability": round(final_fake_prob, 1),
-            "real_probability": round(final_real_prob, 1),
+            "classification": classification,
+            "badge": badge,
+            "is_spam": is_spam,
+            "spam_probability": round(final_spam_prob, 1),
+            "not_spam_probability": round(final_not_spam_prob, 1),
             "severity": severity,
             "severity_color": color,
             "red_flags": red_flags if red_flags else ["No malicious indicators found."],
@@ -186,29 +247,45 @@ class EmailThreatDetector:
             "soar_playbook": soar_actions
         }
 
-    def _generate_email_soar_actions(self, is_fake: bool, sender: str, links: list) -> list:
-        """Generates automated Mailbox & Gateway SOAR containment actions."""
-        if not is_fake:
+    def _generate_email_soar_actions(self, is_spam: bool, sender: str, links: list) -> list:
+        if not is_spam:
             return [
-                "📥 DELIVER TO INBOX: Passed SPF, DKIM, and ML NLP threat filters.",
-                "📊 LOG TELEMETRY: Record message hash in email gateway clean traffic log."
+                "📥 DELIVER TO USER INBOX: Clean SPF, DKIM, and ML NLP threat clearance.",
+                "📊 LOG TELEMETRY: Record message hash into legitimate mail stream archive."
             ]
             
-        actions = [
-            f"🛑 GLOBAL INBOX PURGE: Execute Exchange/M365 message trace & hard delete email from all mailboxes.",
-            f"🔒 DOMAIN SINKHOLE: Add sender domain '{sender.split('@')[-1] if '@' in sender else sender}' to Secure Email Gateway (SEG) blacklist.",
-            "🔐 FORCE USER SSO RESET: Revoke active session tokens for recipient in case links were clicked.",
-            "🛡️ DNS SINKHOLE: Block listed phishing destination URLs at corporate perimeter firewalls."
+        return [
+            f"🛑 GLOBAL INBOX PURGE: Execute Exchange/M365 message trace & hard-delete message from all employee mailboxes.",
+            f"🔒 DOMAIN SINKHOLE: Block sender domain '{sender.split('@')[-1] if '@' in sender else sender}' at Secure Email Gateway (SEG).",
+            "🔐 FORCE SSO PASSWORD RESET: Revoke active session tokens for recipient in case links were clicked.",
+            "🛡️ PERIMETER DNS BLOCK: Blacklist all embedded phishing URLs across corporate firewalls."
         ]
-        return actions
+
+    def batch_analyze_emails(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Batch analyzes a dataframe containing email columns (subject, sender, body)."""
+        results = []
+        for _, row in df.iterrows():
+            subj = str(row.get('subject', row.get('Subject', '')))
+            sender = str(row.get('sender', row.get('From', row.get('Sender', ''))))
+            body = str(row.get('body', row.get('Body', row.get('text', row.get('Text', '')))))
+            
+            res = self.analyze_email(subj, sender, body)
+            results.append({
+                "Subject": subj[:60] + "..." if len(subj) > 60 else subj,
+                "Sender": sender,
+                "Verdict": res['classification'],
+                "Spam_Risk_Pct": res['spam_probability'],
+                "Not_Spam_Pct": res['not_spam_probability'],
+                "Severity": res['severity']
+            })
+        return pd.DataFrame(results)
 
 if __name__ == "__main__":
     detector = EmailThreatDetector()
     test_subject = "Urgent: Your PayPal Account is Restricted"
     test_sender = "security-team@paypa1-verify-account.cc"
-    test_body = "Your PayPal account was accessed from an unknown device. Verify your credentials immediately at http://paypa1-update.cc/login within 24 hours or your balance will be frozen."
+    test_body = "Your PayPal account was accessed from an unknown device. Verify your credentials immediately at http://paypa1-update.cc/login within 24 hours."
     
     res = detector.analyze_email(test_subject, test_sender, test_body)
     print("--- EMAIL THREAT DIAGNOSTIC ---")
-    print(f"Verdict: {res['severity']} - Fake Prob: {res['fake_probability']}% | Real Prob: {res['real_probability']}%")
-    print(f"Red Flags: {len(res['red_flags'])} indicators found.")
+    print(f"Classification: {res['classification']} | Spam Prob: {res['spam_probability']}%")

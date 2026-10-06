@@ -426,162 +426,273 @@ with tabs[0]:
 # TAB 2: EMAIL AUTHENTICITY SCANNER (FAKE VS REAL)
 # ======================================================================================
 with tabs[1]:
-    st.markdown("### 📧 **AI Email Authenticity Scanner (Fake vs. Real Email Detector)**")
-    st.markdown("Inspect email communications in real-time using **Natural Language Processing (NLP)**, psychological urgency detection, and deceptive domain analysis to distinguish **Legitimate (Real)** emails from **Fake (Phishing/Scam)** attacks.")
+    st.markdown("### 📧 **AI Email Authenticity Scanner (Spam / Fake vs. Not Spam / Real)**")
+    st.markdown("Inspect email communications in real-time by **uploading email files (.eml, .txt, .csv, .json)** or entering email content. The NLP & ML engine parses email headers, detects psychological coercion cues, analyzes deceptive domains, and classifies messages as **Spam / Fake** vs **Not Spam / Real**.")
     
-    # One-Click Email Templates
-    st.markdown("##### ⚡ **One-Click Real-World Email Scenarios:**")
-    e_col1, e_col2, e_col3, e_col4, e_col5 = st.columns(5)
+    # Sub-tabs for Single File Upload vs Batch CSV vs Manual Input
+    e_tab1, e_tab2 = st.tabs(["📁 Upload Email File (.eml, .txt, .csv, .json)", "✍️ Manual Email Text & 1-Click Templates"])
     
-    mail_choice = None
-    with e_col1:
-        if st.button("🚨 Fake PayPal Scam"):
-            mail_choice = "Fake_PayPal"
-    with e_col2:
-        if st.button("💸 Urgent CEO Fraud"):
-            mail_choice = "Fake_CEO"
-    with e_col3:
-        if st.button("🎬 Fake Netflix Notice"):
-            mail_choice = "Fake_Netflix"
-    with e_col4:
-        if st.button("📅 Real Zoom Meeting"):
-            mail_choice = "Real_Zoom"
-    with e_col5:
-        if st.button("📦 Real Amazon Order"):
-            mail_choice = "Real_Amazon"
-
-    # Default values for email form
-    mail_defaults = {
-        'sender': "security-alert@paypa1-update-account.cc",
-        'subject': "URGENT: Your PayPal account has been suspended due to suspicious activity!",
-        'body': "Dear Customer, We detected an unauthorized login attempt from an unknown device in Moscow. To prevent permanent suspension, you must verify your identity immediately within 24 hours by clicking here: http://paypa1-security-verification.cc/login. Failure to do so will result in an immediate freeze on all funds."
-    }
-    
-    if mail_choice == "Fake_PayPal":
-        mail_defaults = {
-            'sender': "security@paypa1-support-portal.cc",
-            'subject': "URGENT: Your PayPal account has been suspended!",
-            'body': "Your account has been temporarily restricted due to unusual login activity. Verify your identity immediately within 24 hours at http://paypa1-verify-account.cc/login to avoid legal penalty and permanent funds freeze."
-        }
-    elif mail_choice == "Fake_CEO":
-        mail_defaults = {
-            'sender': "ceo.office@executive-board-urgent.xyz",
-            'subject': "CONFIDENTIAL: Immediate Wire Transfer Request for Acquisition",
-            'body': "I am currently in an executive board meeting and cannot take calls. Wire $68,500 immediately to vendor escrow account #8948234 for urgent contract closing. Do not discuss this with others until finalized."
-        }
-    elif mail_choice == "Fake_Netflix":
-        mail_defaults = {
-            'sender': "billing-dept@netflix-subscription-renew.net",
-            'subject': "Final Notice: Your Netflix subscription renewal payment has failed",
-            'body': "We were unable to process your monthly membership payment. Your subscription will be cancelled in 12 hours unless you update your credit card details immediately at http://netflix-billing-update.cc/portal."
-        }
-    elif mail_choice == "Real_Zoom":
-        mail_defaults = {
-            'sender': "no-reply@zoom.us",
-            'subject': "Invitation: Cyber Defense Project Weekly Standup with Kaviarasan",
-            'body': "Hi Team, You have been invited to the upcoming Zoom meeting: Machine Learning Cyber Defense Architecture Review on Thursday at 3:00 PM. Meeting ID: 894 1234 5678. Passcode: 482910."
-        }
-    elif mail_choice == "Real_Amazon":
-        mail_defaults = {
-            'sender': "shipment-tracking@amazon.com",
-            'subject': "Your Amazon.com order #112-9847291 has shipped",
-            'body': "Hello, Your package containing Data Science & Machine Learning Handbook has shipped via Amazon Logistics and is scheduled to arrive on Friday. Track your package live in your official Amazon account."
-        }
-
-    with st.form("email_scanner_form"):
-        st.markdown("#### 📝 **Email Telemetry & Header Inspector**")
-        e_s1, e_s2 = st.columns([1, 1])
-        with e_s1:
-            in_mail_sender = st.text_input("Sender Address (From:)", value=mail_defaults['sender'])
-        with e_s2:
-            in_mail_subject = st.text_input("Email Subject Line", value=mail_defaults['subject'])
-            
-        in_mail_body = st.text_area("Email Content Body", value=mail_defaults['body'], height=130)
-        
-        scan_btn = st.form_submit_button("🔍 ANALYZE EMAIL AUTHENTICITY WITH NLP", use_container_width=True)
-        
-    if scan_btn or mail_choice:
-        with st.spinner("Analyzing email semantics, urgency cues, and domain reputation..."):
-            mail_res = email_detector.analyze_email(in_mail_subject, in_mail_sender, in_mail_body)
-            time.sleep(0.2)
-            
-        st.markdown("---")
-        st.markdown("### 🎯 **Email Authenticity & Threat Verdict**")
-        
-        banner_class = "threat-crit" if mail_res['severity'] == "CRITICAL" else (
-            "threat-warn" if mail_res['severity'] in ["HIGH", "MEDIUM"] else "threat-safe"
+    with e_tab1:
+        st.markdown("#### 📂 **Upload Your Email File for Instant AI Inspection**")
+        uploaded_email_file = st.file_uploader(
+            "Upload Email File (Supports .eml exported from Gmail/Outlook, .txt raw email, or .csv/.json batch emails)",
+            type=['eml', 'txt', 'csv', 'json'],
+            key="email_file_uploader"
         )
         
-        # Threat Banner Card
-        st.markdown(f"""
-        <div class="threat-banner {banner_class}">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-                <div>
-                    <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Email Classification</span>
-                    <h2 style="margin: 0; color: {mail_res['severity_color']}; font-weight: 800;">
-                        {mail_res['verdict']}
-                    </h2>
-                </div>
-                <div>
-                    <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Fake / Scam Probability</span>
-                    <h2 style="margin: 0; color: #ef4444; font-weight: 800;">{mail_res['fake_probability']}%</h2>
-                </div>
-                <div>
-                    <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Legitimate Authenticity</span>
-                    <h2 style="margin: 0; color: #10b981; font-weight: 800;">{mail_res['real_probability']}%</h2>
-                </div>
-                <div>
-                    <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Threat Severity</span>
-                    <h2 style="margin: 0; color: {mail_res['severity_color']}; font-weight: 800;">{mail_res['severity']}</h2>
+        if uploaded_email_file is not None:
+            file_name = uploaded_email_file.name.lower()
+            
+            # Case 1: Batch CSV or JSON
+            if file_name.endswith('.csv') or file_name.endswith('.json'):
+                if file_name.endswith('.csv'):
+                    df_upload = pd.read_csv(uploaded_email_file)
+                else:
+                    df_upload = pd.read_json(uploaded_email_file)
+                    
+                st.success(f"Successfully loaded batch file '{uploaded_email_file.name}' ({len(df_upload)} records).")
+                
+                if st.button("🚀 SCAN ALL EMAILS IN BATCH FOR SPAM / PHISHING", use_container_width=True):
+                    with st.spinner("Classifying all uploaded emails with NLP threat engine..."):
+                        batch_email_results = email_detector.batch_analyze_emails(df_upload)
+                        time.sleep(0.3)
+                        
+                    st.markdown("#### 🎯 **Batch Email Classification Summary**")
+                    b_e1, b_e2, b_e3 = st.columns(3)
+                    with b_e1:
+                        st.metric("Total Emails Scanned", len(batch_email_results))
+                    with b_e2:
+                        spam_cnt = len(batch_email_results[batch_email_results['Verdict'].str.contains('SPAM')])
+                        st.metric("Spam / Phishing Flagged", spam_cnt, delta=f"{(spam_cnt/len(batch_email_results))*100:.1f}% Infiltration")
+                    with b_e3:
+                        st.metric("Clean Legitimate Mails", len(batch_email_results) - spam_cnt)
+                        
+                    st.dataframe(batch_email_results, use_container_width=True)
+                    
+                    csv_b = io.StringIO()
+                    batch_email_results.to_csv(csv_b, index=False)
+                    st.download_button(
+                        label="📥 Download Classified Email Batch Report (CSV)",
+                        data=csv_b.getvalue(),
+                        file_name="classified_email_threat_report.csv",
+                        mime="text/csv"
+                    )
+            
+            # Case 2: Single .eml or .txt Email File
+            else:
+                raw_bytes = uploaded_email_file.read()
+                parsed = email_detector.parse_eml_bytes(raw_bytes)
+                
+                st.success(f"Successfully parsed email headers from '{uploaded_email_file.name}'!")
+                
+                up_c1, up_c2 = st.columns([1, 1])
+                with up_c1:
+                    st.info(f"**From:** `{parsed['sender']}`\n\n**Subject:** `{parsed['subject']}`\n\n**Date:** `{parsed['date']}`")
+                with up_c2:
+                    st.text_area("Extracted Body Content", value=parsed['body'][:400] + ("..." if len(parsed['body']) > 400 else ""), height=100, disabled=True)
+                    
+                if st.button("🔍 SCAN PARSED EMAIL FOR SPAM / PHISHING", use_container_width=True):
+                    with st.spinner("Evaluating NLP and domain authenticity signals..."):
+                        mail_res_up = email_detector.analyze_email(parsed['subject'], parsed['sender'], parsed['body'])
+                        time.sleep(0.2)
+                        
+                    st.markdown("---")
+                    st.markdown("### 🎯 **Uploaded Email Verdict**")
+                    
+                    up_banner_class = "threat-crit" if mail_res_up['severity'] == "CRITICAL" else (
+                        "threat-warn" if mail_res_up['severity'] in ["HIGH", "MEDIUM"] else "threat-safe"
+                    )
+                    
+                    st.markdown(f"""
+                    <div class="threat-banner {up_banner_class}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Verdict</span>
+                                <h2 style="margin: 0; color: {mail_res_up['severity_color']}; font-weight: 800;">
+                                    {mail_res_up['badge']}
+                                </h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Spam / Scam Risk</span>
+                                <h2 style="margin: 0; color: #ef4444; font-weight: 800;">{mail_res_up['spam_probability']}%</h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Real / Legitimate</span>
+                                <h2 style="margin: 0; color: #10b981; font-weight: 800;">{mail_res_up['not_spam_probability']}%</h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Threat Severity</span>
+                                <h2 style="margin: 0; color: {mail_res_up['severity_color']}; font-weight: 800;">{mail_res_up['severity']}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    up_col1, up_col2 = st.columns([1, 1])
+                    with up_col1:
+                        st.markdown("#### 🚩 **Flagged Deceptive Indicators**")
+                        for flag in mail_res_up['red_flags']:
+                            st.markdown(f"• 🚨 {flag}")
+                        for gflag in mail_res_up['green_flags']:
+                            st.markdown(f"• ✅ {gflag}")
+                            
+                    with up_col2:
+                        st.markdown("#### 🛡️ **Automated Mailbox SOAR Playbook**")
+                        for action in mail_res_up['soar_playbook']:
+                            st.markdown(f"> {action}")
+        else:
+            st.info("💡 Drag and drop your `.eml` or `.txt` email file here, or switch to the manual tab below.")
+            
+    with e_tab2:
+        # One-Click Email Templates
+        st.markdown("##### ⚡ **Quick-Load Real-World Email Templates:**")
+        e_col1, e_col2, e_col3, e_col4, e_col5 = st.columns(5)
+        
+        mail_choice = None
+        with e_col1:
+            if st.button("🚨 Fake PayPal Scam"):
+                mail_choice = "Fake_PayPal"
+        with e_col2:
+            if st.button("💸 Urgent CEO Fraud"):
+                mail_choice = "Fake_CEO"
+        with e_col3:
+            if st.button("🎬 Fake Netflix Notice"):
+                mail_choice = "Fake_Netflix"
+        with e_col4:
+            if st.button("📅 Real Zoom Meeting"):
+                mail_choice = "Real_Zoom"
+        with e_col5:
+            if st.button("📦 Real Amazon Order"):
+                mail_choice = "Real_Amazon"
+
+        mail_defaults = {
+            'sender': "security-alert@paypa1-update-account.cc",
+            'subject': "URGENT: Your PayPal account has been suspended due to suspicious activity!",
+            'body': "Dear Customer, We detected an unauthorized login attempt from an unknown device in Moscow. To prevent permanent suspension, you must verify your identity immediately within 24 hours by clicking here: http://paypa1-security-verification.cc/login. Failure to do so will result in an immediate freeze on all funds."
+        }
+        
+        if mail_choice == "Fake_PayPal":
+            mail_defaults = {
+                'sender': "security@paypa1-support-portal.cc",
+                'subject': "URGENT: Your PayPal account has been suspended!",
+                'body': "Your account has been temporarily restricted due to unusual login activity. Verify your identity immediately within 24 hours at http://paypa1-verify-account.cc/login to avoid legal penalty and permanent funds freeze."
+            }
+        elif mail_choice == "Fake_CEO":
+            mail_defaults = {
+                'sender': "ceo.office@executive-board-urgent.xyz",
+                'subject': "CONFIDENTIAL: Immediate Wire Transfer Request for Acquisition",
+                'body': "I am currently in an executive board meeting and cannot take calls. Wire $68,500 immediately to vendor escrow account #8948234 for urgent contract closing. Do not discuss this with others until finalized."
+            }
+        elif mail_choice == "Fake_Netflix":
+            mail_defaults = {
+                'sender': "billing-dept@netflix-subscription-renew.net",
+                'subject': "Final Notice: Your Netflix subscription renewal payment has failed",
+                'body': "We were unable to process your monthly membership payment. Your subscription will be cancelled in 12 hours unless you update your credit card details immediately at http://netflix-billing-update.cc/portal."
+            }
+        elif mail_choice == "Real_Zoom":
+            mail_defaults = {
+                'sender': "no-reply@zoom.us",
+                'subject': "Invitation: Cyber Defense Project Weekly Standup with Kaviarasan",
+                'body': "Hi Team, You have been invited to the upcoming Zoom meeting: Machine Learning Cyber Defense Architecture Review on Thursday at 3:00 PM. Meeting ID: 894 1234 5678. Passcode: 482910."
+            }
+        elif mail_choice == "Real_Amazon":
+            mail_defaults = {
+                'sender': "shipment-tracking@amazon.com",
+                'subject': "Your Amazon.com order #112-9847291 has shipped",
+                'body': "Hello, Your package containing Data Science & Machine Learning Handbook has shipped via Amazon Logistics and is scheduled to arrive on Friday. Track your package live in your official Amazon account."
+            }
+
+        with st.form("email_scanner_form"):
+            st.markdown("#### 📝 **Email Telemetry & Header Inspector**")
+            e_s1, e_s2 = st.columns([1, 1])
+            with e_s1:
+                in_mail_sender = st.text_input("Sender Address (From:)", value=mail_defaults['sender'])
+            with e_s2:
+                in_mail_subject = st.text_input("Email Subject Line", value=mail_defaults['subject'])
+                
+            in_mail_body = st.text_area("Email Content Body", value=mail_defaults['body'], height=130)
+            
+            scan_btn = st.form_submit_button("🔍 ANALYZE EMAIL AUTHENTICITY WITH NLP", use_container_width=True)
+            
+        if scan_btn or mail_choice:
+            with st.spinner("Analyzing email semantics, urgency cues, and domain reputation..."):
+                mail_res = email_detector.analyze_email(in_mail_subject, in_mail_sender, in_mail_body)
+                time.sleep(0.2)
+                
+            st.markdown("---")
+            st.markdown("### 🎯 **Email Authenticity & Threat Verdict**")
+            
+            banner_class = "threat-crit" if mail_res['severity'] == "CRITICAL" else (
+                "threat-warn" if mail_res['severity'] in ["HIGH", "MEDIUM"] else "threat-safe"
+            )
+            
+            st.markdown(f"""
+            <div class="threat-banner {banner_class}">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                    <div>
+                        <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Verdict</span>
+                        <h2 style="margin: 0; color: {mail_res['severity_color']}; font-weight: 800;">
+                            {mail_res['badge']}
+                        </h2>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Spam / Scam Probability</span>
+                        <h2 style="margin: 0; color: #ef4444; font-weight: 800;">{mail_res['spam_probability']}%</h2>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Real / Legitimate</span>
+                        <h2 style="margin: 0; color: #10b981; font-weight: 800;">{mail_res['not_spam_probability']}%</h2>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Threat Severity</span>
+                        <h2 style="margin: 0; color: {mail_res['severity_color']}; font-weight: 800;">{mail_res['severity']}</h2>
+                    </div>
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Diagnostic Breakdown
-        m_col1, m_col2 = st.columns([1, 1])
-        
-        with m_col1:
-            st.markdown("#### 📊 **Authenticity Probability Gauge**")
-            chart_data = pd.DataFrame({
-                "Category": ["Fake / Phishing Threat", "Real & Authentic"],
-                "Score (%)": [mail_res['fake_probability'], mail_res['real_probability']]
-            })
-            fig_email = px.bar(
-                chart_data,
-                x='Score (%)',
-                y='Category',
-                orientation='h',
-                color='Category',
-                color_discrete_map={'Fake / Phishing Threat': '#ef4444', 'Real & Authentic': '#10b981'},
-                text='Score (%)',
-                template="plotly_dark"
-            )
-            fig_email.update_layout(
-                margin=dict(t=10, b=10, l=10, r=10),
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                showlegend=False
-            )
-            st.plotly_chart(fig_email, use_container_width=True)
+            """, unsafe_allow_html=True)
             
-            st.markdown("#### 🔍 **Extracted Hyperlinks & Domain Risk**")
-            if mail_res['extracted_urls']:
-                for u in mail_res['extracted_urls']:
-                    st.markdown(f"• `{u}`")
-            else:
-                st.info("No external URLs found in the email body.")
-
-        with m_col2:
-            st.markdown("#### 🚩 **Flagged Deceptive Indicators (XAI Attribution)**")
-            for flag in mail_res['red_flags']:
-                st.markdown(f"• 🚨 {flag}")
-            for gflag in mail_res['green_flags']:
-                st.markdown(f"• ✅ {gflag}")
+            m_col1, m_col2 = st.columns([1, 1])
+            with m_col1:
+                st.markdown("#### 📊 **Authenticity Probability Gauge**")
+                chart_data = pd.DataFrame({
+                    "Category": ["Spam / Phishing Threat", "Real & Authentic"],
+                    "Score (%)": [mail_res['spam_probability'], mail_res['not_spam_probability']]
+                })
+                fig_email = px.bar(
+                    chart_data,
+                    x='Score (%)',
+                    y='Category',
+                    orientation='h',
+                    color='Category',
+                    color_discrete_map={'Spam / Phishing Threat': '#ef4444', 'Real & Authentic': '#10b981'},
+                    text='Score (%)',
+                    template="plotly_dark"
+                )
+                fig_email.update_layout(
+                    margin=dict(t=10, b=10, l=10, r=10),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    showlegend=False
+                )
+                st.plotly_chart(fig_email, use_container_width=True)
                 
-            st.markdown("#### 🛡️ **Automated Mailbox SOAR Playbook**")
-            for action in mail_res['soar_playbook']:
-                st.markdown(f"> {action}")
+                st.markdown("#### 🔍 **Extracted Hyperlinks & Domain Risk**")
+                if mail_res['extracted_urls']:
+                    for u in mail_res['extracted_urls']:
+                        st.markdown(f"• `{u}`")
+                else:
+                    st.info("No external URLs found in the email body.")
+
+            with m_col2:
+                st.markdown("#### 🚩 **Flagged Deceptive Indicators (XAI Attribution)**")
+                for flag in mail_res['red_flags']:
+                    st.markdown(f"• 🚨 {flag}")
+                for gflag in mail_res['green_flags']:
+                    st.markdown(f"• ✅ {gflag}")
+                    
+                st.markdown("#### 🛡️ **Automated Mailbox SOAR Playbook**")
+                for action in mail_res['soar_playbook']:
+                    st.markdown(f"> {action}")
 
 
 # ======================================================================================
