@@ -433,57 +433,181 @@ with tabs[1]:
     e_tab1, e_tab2 = st.tabs(["📁 Upload Email File (.eml, .txt, .csv, .json)", "✍️ Manual Email Text & 1-Click Templates"])
     
     with e_tab1:
-        st.markdown("#### 📂 **Upload Your Email File for Instant AI Inspection**")
+        st.markdown("#### 📂 **Upload Document, Email or Screenshot for AI Threat Inspection**")
         uploaded_email_file = st.file_uploader(
-            "Upload Email File (Supports .eml exported from Gmail/Outlook, .txt raw email, or .csv/.json batch emails)",
-            type=['eml', 'txt', 'csv', 'json'],
+            "Upload File: Supports PDF documents (.pdf), Screenshots (.png, .jpg, .jpeg, .webp), Emails (.eml, .msg, .txt), Excel (.xlsx, .xls), or Batch CSV/JSON (.csv, .json)",
+            type=['pdf', 'png', 'jpg', 'jpeg', 'webp', 'eml', 'msg', 'txt', 'csv', 'json', 'xlsx', 'xls'],
             key="email_file_uploader"
         )
         
         if uploaded_email_file is not None:
             file_name = uploaded_email_file.name.lower()
+            raw_bytes = uploaded_email_file.read()
             
-            # Case 1: Batch CSV or JSON
-            if file_name.endswith('.csv') or file_name.endswith('.json'):
+            # Case 1: Batch CSV, Excel, or JSON
+            if file_name.endswith('.csv') or file_name.endswith('.json') or file_name.endswith('.xlsx') or file_name.endswith('.xls'):
                 if file_name.endswith('.csv'):
-                    df_upload = pd.read_csv(uploaded_email_file)
+                    df_upload = pd.read_csv(io.BytesIO(raw_bytes))
+                elif file_name.endswith('.json'):
+                    df_upload = pd.read_json(io.BytesIO(raw_bytes))
                 else:
-                    df_upload = pd.read_json(uploaded_email_file)
+                    df_upload = pd.read_excel(io.BytesIO(raw_bytes))
                     
                 st.success(f"Successfully loaded batch file '{uploaded_email_file.name}' ({len(df_upload)} records).")
                 
-                if st.button("🚀 SCAN ALL EMAILS IN BATCH FOR SPAM / PHISHING", use_container_width=True):
-                    with st.spinner("Classifying all uploaded emails with NLP threat engine..."):
+                if st.button("🚀 SCAN ALL RECORDS IN BATCH FOR SPAM / PHISHING", use_container_width=True):
+                    with st.spinner("Classifying all uploaded records with NLP threat engine..."):
                         batch_email_results = email_detector.batch_analyze_emails(df_upload)
                         time.sleep(0.3)
                         
-                    st.markdown("#### 🎯 **Batch Email Classification Summary**")
+                    st.markdown("#### 🎯 **Batch Classification Summary**")
                     b_e1, b_e2, b_e3 = st.columns(3)
                     with b_e1:
-                        st.metric("Total Emails Scanned", len(batch_email_results))
+                        st.metric("Total Records Scanned", len(batch_email_results))
                     with b_e2:
                         spam_cnt = len(batch_email_results[batch_email_results['Verdict'].str.contains('SPAM')])
                         st.metric("Spam / Phishing Flagged", spam_cnt, delta=f"{(spam_cnt/len(batch_email_results))*100:.1f}% Infiltration")
                     with b_e3:
-                        st.metric("Clean Legitimate Mails", len(batch_email_results) - spam_cnt)
+                        st.metric("Clean Legitimate Items", len(batch_email_results) - spam_cnt)
                         
                     st.dataframe(batch_email_results, use_container_width=True)
                     
                     csv_b = io.StringIO()
                     batch_email_results.to_csv(csv_b, index=False)
                     st.download_button(
-                        label="📥 Download Classified Email Batch Report (CSV)",
+                        label="📥 Download Classified Batch Report (CSV)",
                         data=csv_b.getvalue(),
-                        file_name="classified_email_threat_report.csv",
+                        file_name="classified_threat_batch_report.csv",
                         mime="text/csv"
                     )
-            
-            # Case 2: Single .eml or .txt Email File
-            else:
-                raw_bytes = uploaded_email_file.read()
-                parsed = email_detector.parse_eml_bytes(raw_bytes)
+
+            # Case 2: PDF Document
+            elif file_name.endswith('.pdf'):
+                parsed = email_detector.parse_pdf_bytes(raw_bytes, filename=uploaded_email_file.name)
+                st.success(f"📄 Successfully parsed PDF Document: '{uploaded_email_file.name}' ({parsed.get('page_count', 1)} pages)!")
                 
-                st.success(f"Successfully parsed email headers from '{uploaded_email_file.name}'!")
+                up_c1, up_c2 = st.columns([1, 1])
+                with up_c1:
+                    st.info(f"**Document Title:** `{parsed['subject']}`\n\n**Author/Origin:** `{parsed['sender']}`\n\n**Creation Date:** `{parsed['date']}`")
+                with up_c2:
+                    st.text_area("Extracted PDF Text Content", value=parsed['body'][:500] + ("..." if len(parsed['body']) > 500 else ""), height=110, disabled=True)
+                    
+                if st.button("🔍 SCAN PDF FOR SPAM / PHISHING / MALICIOUS LINKS", use_container_width=True):
+                    with st.spinner("Analyzing PDF text semantics, domain risks, and embedded URLs..."):
+                        mail_res_up = email_detector.analyze_email(parsed['subject'], parsed['sender'], parsed['body'])
+                        time.sleep(0.2)
+                        
+                    st.markdown("---")
+                    st.markdown("### 🎯 **PDF Document Threat Verdict**")
+                    
+                    up_banner_class = "threat-crit" if mail_res_up['severity'] == "CRITICAL" else (
+                        "threat-warn" if mail_res_up['severity'] in ["HIGH", "MEDIUM"] else "threat-safe"
+                    )
+                    
+                    st.markdown(f"""
+                    <div class="threat-banner {up_banner_class}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Verdict</span>
+                                <h2 style="margin: 0; color: {mail_res_up['severity_color']}; font-weight: 800;">
+                                    {mail_res_up['badge']}
+                                </h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Spam / Phishing Risk</span>
+                                <h2 style="margin: 0; color: #ef4444; font-weight: 800;">{mail_res_up['spam_probability']}%</h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Real / Legitimate</span>
+                                <h2 style="margin: 0; color: #10b981; font-weight: 800;">{mail_res_up['not_spam_probability']}%</h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Threat Severity</span>
+                                <h2 style="margin: 0; color: {mail_res_up['severity_color']}; font-weight: 800;">{mail_res_up['severity']}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    up_col1, up_col2 = st.columns([1, 1])
+                    with up_col1:
+                        st.markdown("#### 🚩 **Flagged Risk Indicators**")
+                        for flag in mail_res_up['red_flags']:
+                            st.markdown(f"• 🚨 {flag}")
+                        for gflag in mail_res_up['green_flags']:
+                            st.markdown(f"• ✅ {gflag}")
+                            
+                    with up_col2:
+                        st.markdown("#### 🛡️ **Automated SOAR Quarantine Playbook**")
+                        for action in mail_res_up['soar_playbook']:
+                            st.markdown(f"> {action}")
+
+            # Case 3: Image / Screenshot
+            elif file_name.endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                parsed = email_detector.parse_image_bytes(raw_bytes, filename=uploaded_email_file.name)
+                st.success(f"🖼️ Successfully loaded Image: '{uploaded_email_file.name}' ({parsed.get('dimensions', 'N/A')})!")
+                
+                img_c1, img_c2 = st.columns([1, 1])
+                with img_c1:
+                    st.image(io.BytesIO(raw_bytes), caption=f"Uploaded Image: {uploaded_email_file.name}", use_column_width=True)
+                with img_c2:
+                    st.info(f"**Image Name:** `{uploaded_email_file.name}`\n\n**Format:** `{parsed.get('format', 'Image')}`\n\n**Resolution:** `{parsed.get('dimensions', 'N/A')}`")
+                    st.text_area("Extracted Image Text Stream", value=parsed['body'][:400] + ("..." if len(parsed['body']) > 400 else ""), height=100, disabled=True)
+                    
+                if st.button("🔍 SCAN IMAGE FOR PHISHING / SPAM ARTIFACTS", use_container_width=True):
+                    with st.spinner("Analyzing image visual telemetry and semantic strings..."):
+                        mail_res_up = email_detector.analyze_email(parsed['subject'], parsed['sender'], parsed['body'])
+                        time.sleep(0.2)
+                        
+                    st.markdown("---")
+                    st.markdown("### 🎯 **Image Security Verdict**")
+                    
+                    up_banner_class = "threat-crit" if mail_res_up['severity'] == "CRITICAL" else (
+                        "threat-warn" if mail_res_up['severity'] in ["HIGH", "MEDIUM"] else "threat-safe"
+                    )
+                    
+                    st.markdown(f"""
+                    <div class="threat-banner {up_banner_class}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Verdict</span>
+                                <h2 style="margin: 0; color: {mail_res_up['severity_color']}; font-weight: 800;">
+                                    {mail_res_up['badge']}
+                                </h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Spam / Scam Risk</span>
+                                <h2 style="margin: 0; color: #ef4444; font-weight: 800;">{mail_res_up['spam_probability']}%</h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Real / Legitimate</span>
+                                <h2 style="margin: 0; color: #10b981; font-weight: 800;">{mail_res_up['not_spam_probability']}%</h2>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Threat Severity</span>
+                                <h2 style="margin: 0; color: {mail_res_up['severity_color']}; font-weight: 800;">{mail_res_up['severity']}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    up_col1, up_col2 = st.columns([1, 1])
+                    with up_col1:
+                        st.markdown("#### 🚩 **Flagged Deceptive Indicators**")
+                        for flag in mail_res_up['red_flags']:
+                            st.markdown(f"• 🚨 {flag}")
+                        for gflag in mail_res_up['green_flags']:
+                            st.markdown(f"• ✅ {gflag}")
+                            
+                    with up_col2:
+                        st.markdown("#### 🛡️ **Automated SOAR Playbook**")
+                        for action in mail_res_up['soar_playbook']:
+                            st.markdown(f"> {action}")
+            
+            # Case 4: Single .eml, .msg, or .txt Email File
+            else:
+                parsed = email_detector.parse_eml_bytes(raw_bytes)
+                st.success(f"📧 Successfully parsed email headers from '{uploaded_email_file.name}'!")
                 
                 up_c1, up_c2 = st.columns([1, 1])
                 with up_c1:
@@ -541,7 +665,7 @@ with tabs[1]:
                         for action in mail_res_up['soar_playbook']:
                             st.markdown(f"> {action}")
         else:
-            st.info("💡 Drag and drop your `.eml` or `.txt` email file here, or switch to the manual tab below.")
+            st.info("💡 Drag and drop your **PDF document**, **Image/Screenshot (.png, .jpg)**, or **Email file (.eml, .txt, .csv, .xlsx)** here.")
             
     with e_tab2:
         # One-Click Email Templates

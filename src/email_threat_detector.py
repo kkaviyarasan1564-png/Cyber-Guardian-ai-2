@@ -114,27 +114,110 @@ class EmailThreatDetector:
                         body += part.get_payload(decode=True).decode('utf-8', errors='ignore') + "\n"
                     elif content_type == 'text/html' and not body:
                         html_text = part.get_payload(decode=True).decode('utf-8', errors='ignore')
-                        # Simple tag strip
                         body += re.sub(r'<[^>]+>', ' ', html_text) + "\n"
             else:
                 body = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
                 
             return {
-                "subject": subject,
-                "sender": sender,
-                "date": date,
-                "to": to,
-                "body": body.strip()
+                "subject": subject or "Uploaded Email Document",
+                "sender": sender or "Unknown Sender",
+                "date": date or "N/A",
+                "to": to or "N/A",
+                "body": body.strip() if body else "No text body found."
             }
         except Exception:
-            # Fallback to plain text decode
             text = file_bytes.decode('utf-8', errors='ignore')
             return {
-                "subject": "Uploaded Plain Text Email",
+                "subject": "Uploaded Email / Text Document",
                 "sender": "Unknown Sender",
                 "date": "N/A",
                 "to": "N/A",
                 "body": text.strip()
+            }
+
+    def parse_pdf_bytes(self, file_bytes: bytes, filename: str = "document.pdf") -> dict:
+        """Extracts text, metadata, and embedded URLs from an uploaded PDF document."""
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(file_bytes))
+            text_pages = []
+            extracted_urls = []
+            
+            for idx, page in enumerate(reader.pages):
+                page_text = page.extract_text() or ""
+                text_pages.append(page_text)
+                
+                # Extract annotations / links if present
+                if "/Annots" in page:
+                    for annot in page["/Annots"]:
+                        annot_obj = annot.get_object()
+                        if "/A" in annot_obj and "/URI" in annot_obj["/A"]:
+                            extracted_urls.append(annot_obj["/A"]["/URI"])
+                            
+            full_text = "\n".join(text_pages).strip()
+            meta = reader.metadata or {}
+            title = meta.get('/Title', filename) or filename
+            author = meta.get('/Author', 'PDF Document Author') or 'PDF Document'
+            
+            if not full_text:
+                full_text = f"PDF file '{filename}' with {len(reader.pages)} page(s). No readable text layer found."
+                
+            return {
+                "subject": f"PDF Document: {title}",
+                "sender": author,
+                "date": str(meta.get('/CreationDate', 'N/A')),
+                "to": "Document Viewer",
+                "body": full_text,
+                "embedded_urls": extracted_urls,
+                "page_count": len(reader.pages)
+            }
+        except Exception as e:
+            return {
+                "subject": f"Uploaded PDF: {filename}",
+                "sender": "PDF File",
+                "date": "N/A",
+                "to": "N/A",
+                "body": f"Error extracting PDF: {str(e)}"
+            }
+
+    def parse_image_bytes(self, file_bytes: bytes, filename: str = "screenshot.png") -> dict:
+        """Parses an uploaded image or email screenshot."""
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(file_bytes))
+            width, height = img.size
+            img_format = img.format or "Image"
+            
+            # Extract plain text from strings stream in image bytes if any embedded text exists
+            printable_strings = re.findall(rb'[A-Za-z0-9_\-\.\:\/\@\s]{5,}', file_bytes)
+            decoded_text = ""
+            for s in printable_strings:
+                try:
+                    dec = s.decode('ascii', errors='ignore').strip()
+                    if len(dec) > 8 and any(c.isalpha() for c in dec):
+                        decoded_text += dec + " "
+                except Exception:
+                    pass
+                    
+            if not decoded_text.strip():
+                decoded_text = f"Email screenshot image '{filename}' ({width}x{height} {img_format}). Visual threat inspection active."
+                
+            return {
+                "subject": f"Image Screenshot: {filename}",
+                "sender": f"Image File ({img_format})",
+                "date": "N/A",
+                "to": "Visual Threat Scanner",
+                "body": decoded_text.strip(),
+                "dimensions": f"{width}x{height}",
+                "format": img_format
+            }
+        except Exception as e:
+            return {
+                "subject": f"Uploaded Image: {filename}",
+                "sender": "Image File",
+                "date": "N/A",
+                "to": "N/A",
+                "body": f"Error parsing image: {str(e)}"
             }
 
     def analyze_email(self, subject: str, sender: str, body: str) -> dict:
